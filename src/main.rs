@@ -39,7 +39,10 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
             .merge(config::File::with_name(&data_path.to_string_lossy()).required(false))
         {
             Ok(_v) => (),
-            Err(e) => eprintln!("An error occurred for the data file {:?}\n{}\n", data_path, e),
+            Err(e) => eprintln!(
+                "An error occurred for the data file {:?}\n{}\n",
+                data_path, e
+            ),
         }
     }
     let data: toml::Value = raw_config
@@ -48,7 +51,8 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
 
     for template in args.templates {
         if template.is_dir() {
-            match template_registry.register_templates_directory(FILE_EXTENSION_WITH_DOT, template) {
+            match template_registry.register_templates_directory(FILE_EXTENSION_WITH_DOT, template)
+            {
                 Ok(_v) => continue,
                 Err(e) => eprintln!("{}", e),
             }
@@ -94,8 +98,7 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
             Some(output_path) => {
                 let mut output_file = File::create(output_path)?;
 
-                output_file
-                    .write(v.as_bytes())?;
+                output_file.write(v.as_bytes())?;
             }
             None => println!("{}", v),
         },
