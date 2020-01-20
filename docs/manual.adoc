@@ -1,0 +1,145 @@
+= hantemcli(1)
+Gabriel Arazas
+2020-01-17
+:toc:
+:doctype: manpage
+:program: Hantemcli
+:manmanual: {program} Manual
+:mansource: {program} v0.1.0
+
+:binary-name: hantemcli
+:template-file-ext: hbs
+
+
+
+
+== Name 
+
+{binary-name} - a basic application for rendering Handlebars templates with data files (i.e., JSON, YAML, HJSON, INI, TOML). 
+
+
+
+
+== Sypnosis 
+
+*{binary-name}* [_GLOBAL OPTIONS_] [_TEMPLATE FILES_]... -- [_DATA FILES_]...
+
+
+
+
+== Global options 
+
+*-o, --output*=[_PATH_]:: 
+The output file to be written. 
+
+*-r, --root*=[_TEMPLATE NAME_]:: 
+The template name in the registry to be rendered. 
+
+*-s, --strict*:: 
+Set the renderer in strict mode where it will give an error for a missing value. 
+
+
+
+
+== User guide 
+
+{program} is a simple Handlebars template renderer for the command line. 
+It is inspired from other command line template renderers such as https://github.com/subfuzion/envtpl/[envtpl] and https://github.com/quitoque/hdlbr[hdlbr]. 
+In this case, {program} tries to stand out by allowing you to render templates with multiple files along with enforcing some conventions. 
+This is particularly useful for simple use cases such as quickly rendering text files/configuration files. 
+footnote:[In my case, I use to render LaTeX files with certain data files.]
+
+Consider the examples with this particular folder structure. 
+
+[source]
+----
+tests
+├── base.hbs
+├── default.toml
+├── dev.toml
+├── prod.toml
+├── template.hbs
+├── test2.json
+└── test.json
+----
+
+First basic example: a basic template with a data file. 
+
+[source, shell]
+----
+hantemcli tests/template.hbs -- tests/default.toml
+----
+
+This also introduces one of the restrictions: {program} only accepts template files with the '{template-file-ext}' file extension. 
+
+Registering multiple templates is also possible. 
+This is required if you want to make use of https://handlebarsjs.com/guide/#partials[partials] and create skeleton templates. 
+
+Internally, the files are registered in a key-value store where the relative path of the file starting from the current directory as the key. 
+In the previous example shell command, the file `tests/template.hbs` is registered simply as `tests/template`. 
+
+We can only render one template in a command. 
+To set the template to be rendered (also referred to as the *root template*), you can set the `-r`/`--root` option and give the template name in the key-value store. 
+If this option is not set, it will render the template that is alphabetically first in the template store. 
+In this example, we render the template named 'tests/base' in the resulting registry (which is the one to be rendered if the option is unset anyway) considering with all of the TOML data files. 
+
+[source, shell]
+----
+hantemcli --root tests/base tests/template.hbs tests/base.hbs -- tests/default.toml
+----
+
+{program} can also accept a directory for the location of the templates. 
+This will register all of the template files in the directory and its subdirectories with their keys set to the relative path from the given directory. 
+
+Let's inspect the following command. 
+
+[source, shell]
+----
+hantemcli tests/ -- tests/default.toml
+----
+
+In this case, the key-value store will have two templates namely: 'template' and 'base'. 
+
+Say if you have another file outside of the test folder with the same template files and it makes use of the test templates. 
+You can get around this by running the command with the current directory as the argument — i.e., `hantemcli . -- tests/default.toml`. 
+
+As said previously, {program} accepts data files of various formats (i.e., JSON, HJSON, INI, YAML, TOML) as long it is results into a hash table/associative array. 
+The data from those files are then merged starting with the first given data file in the command. 
+In this example, we render the template named 'base' in the registry with all of the data files. 
+It will start to merge with the first data file (`tests/default.toml` since it is alphabetically first) then the second, third, and so on. 
+
+[source, shell]
+----
+hantemcli --root base tests/ -- $(ls tests/*.toml) $(ls tests/*.json)
+----
+
+The renderer can also be set in strict mode. 
+In this mode, it will give an error for a missing value. 
+This is useful for ensuring the template is fully rendered as intended. 
+
+Although, missing partials are not included in the error-checking process. 
+
+[source, shell]
+----
+# May or may not return an error depending if the resulting data from the data file(s) is complete. 
+hantemcli --root template --strict tests/ -- tests/default.toml
+----
+
+
+
+
+== Exit codes 
+
+**0**:: 
+Termination has been successful. 
+
+**1**:: 
+An error occurred (i.e., file creation error, template rendering error). 
+
+
+
+
+== Repository 
+
+// TODO: Insert repo link here
+

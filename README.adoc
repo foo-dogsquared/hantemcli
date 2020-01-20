@@ -1,0 +1,110 @@
+= Hantemcli
+:toc:
+
+:program: Hantemcli
+
+{program} (Handlebars templating CLI) is a small application for rendering https://handlebarsjs.com/[Handlebars] templates with data files. 
+Utilizing the https://crates.io/crates/config[`config` Rust library], it is possible to merge the data files to create the template (as long as it result in a top-level hash table anyway). 
+
+
+
+
+== Design rationale 
+
+* Make the full use of the underlying https://crates.io/crates/handlebars[Handlebars library] while providing a smooth user experience using it in the command line. 
+
+* Mainly include the support for https://handlebarsjs.com/guide/#partials[partials] and custom helpers (not yet possible for the latter). 
+
+* Make use of more than one data files and include support for more data formats. 
+
+* Enforce certain conventions for rendering with Handlebars (or something BS). 
+
+
+
+
+== Non-goals 
+
+* High performance is not a priority especially with a large number of templates and/or data files. 
+
+* Provide a way of granular level of control for interacting with the program — i.e., filtering certain files, setting a minimum and maximum depth of the folder to search for the templates. 
+It'll be an interesting challenge anyhow on how to provide certain scale of control while making it stupidly simple. 
+(Though, it'll be some form of bikeshedding at that point.)
+
+
+
+
+== Getting started 
+
+To get started with using {program}. 
+Just have the plain text files and your data formats ready. 
+
+Then execute Hantemcli similar to the following command. 
+
+[source, shell]
+----
+hantemcli TEMPLATE_FILES... -- DATA_FILES...
+----
+
+The templates files are then stored in a key-value registry with the relative path without the file extension as the key. 
+The template files should have `.hbs` as the file extension. 
+
+[source, shell]
+----
+hantemcli tests/template.hbs tests/base.hbs -- tests/default.toml tests/dev.toml
+
+# Will result in a template registry with the templates `tests/template` and `tests/base`. 
+----
+
+You can also give a directory that will register all of the valid template files in the directory and its subdirectories. 
+The multiple templates is particularly for https://handlebarsjs.com/guide/#partials[partials] making rendering skeleton templates possible. 
+The key of the templates in the directory is also set relative to the path of the directory — e.g., 'tests/template.hbs' will be set as 'template', 'tests/base' as 'base', etc. 
+
+That said, to set the root template (the template to be rendered), you can explicitly set the template name stored in the registry with the `-r`/`--root` option. 
+If the root template flag is not set, it will get the alphabetically first template name in the registry. 
+
+The data from the data files (e.g., JSON, YAML, TOML) are then merged starting from the first data file in the command. 
+Then it will be used for the template string from the template files and print it out to `stdout`. 
+
+If you want to store it in a file, you can simply use the `-o`/`--output` option with the location of the output file. 
+Or simply redirect the `stdout` stream to the output file. 
+
+[source, shell]
+----
+hantemcli TEMPLATE_FILE -- DATA_FILES... > output.txt
+----
+
+For detailed information about the program, you can read the link:docs/manual.doc[manual]. 
+
+
+
+
+== Building the project 
+
+You can build an executable of the program simply by cloning this repo (`git clone GIT_REPO_LINK`), setting the current directory to the cloned repo, and running `cargo build --release`. 
+
+
+
+
+== Conventions 
+
+{program} has some conventions that strictly enforces. 
+
+First, it only accepts `.hbs` files. 
+This is to make using {program} a bit easier by narrowing the files to be searched. 
+
+{program} also makes use of a template registry that stores the content of the files. 
+The name of the template is also the path of the file. 
+
+Due to the (intended future) support for other data formats (looking at https://dhall-lang.org/[Dhall] for example) and its bias for the https://github.com/toml-lang/toml[TOML format], Hantemcli strictly enforces the root to be a hash table/object. 
+Top-level lists/arrays and primitives are not allowed. 
+
+
+
+
+== Dependencies 
+
+* https://crates.io/crates/config[config] (as well as all of the library implementations of the TOML, JSON, HJSON, INI, and YAML)
+* https://crates.io/crates/handlebars[Handlebars]
+* https://crates.io/crates/structopt[structopt] (on top of https://crates.io/crates/clap[clap])
+* https://crates.io/crates/toml[toml]
+
