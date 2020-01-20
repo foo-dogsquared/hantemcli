@@ -1,0 +1,46 @@
+# This configuration and the setup was based from ripgrep by Andrew Gallant (BurntSushi). 
+# https://github.com/BurntSushi/ripgrep
+
+language: rust
+rust:
+  - stable
+env:
+  global:
+    - RUST_BACKTRACE: full
+    - PROJECT_NAME: hantemcli
+cache: cargo
+
+# For now, it only support the operating systems I always get to use. 
+matrix:
+  fast_finish: true
+  include:
+    - os: linux
+      env: TARGET=x86_64-unknown-linux-gnu
+
+    - os: windows
+      env: TARGET=x86_64-pc-windows-gnu
+
+    - os: windows
+      env: TARGET=x86_64-pc-windows-msvc
+
+# Installing all of the required dependencies for packaging the program.
+install: 
+  - chmod +x ci/install.sh
+  - ci/install.sh
+before_script:
+  - gem install asciidoctor
+script:
+  - make create-docs
+  - chmod +x ci/script.sh
+  - ci/script.sh
+
+deploy:
+  provider: releases
+  api_key: $GITHUB_TOKEN
+  file_glob: true
+  file: deployment/${PROJECT_NAME}-${TRAVIS_TAG}-${TARGET}.*
+  overwrite: true
+  skip_cleanup: true
+  on:
+    tags: true
+    branch: master
