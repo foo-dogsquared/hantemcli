@@ -73,7 +73,7 @@ Or simply redirect the `stdout` stream to the output file.
 hantemcli TEMPLATE_FILE -- DATA_FILES... > output.txt
 ----
 
-For detailed information about the program, you can read the link:docs/manual.doc[manual]. 
+For detailed information about the program, you can read the link:docs/manual.adoc[manual]. 
 
 
 
@@ -89,11 +89,12 @@ You can build an executable of the program simply by cloning this repo (`git clo
 
 {program} has some conventions that strictly enforces. 
 
-First, it only accepts `.hbs` files. 
+First, it only accepts files with certain file extensions. 
+The default file extension to be searched is `.hbs`. 
+This can be configured by the user with the `--extension`/`-e` option. 
 This is to make using {program} a bit easier by narrowing the files to be searched. 
 
 {program} also makes use of a template registry that stores the content of the files. 
-The name of the template is also the path of the file. 
 
 Due to the (intended future) support for other data formats (looking at https://dhall-lang.org/[Dhall] for example) and its bias for the https://github.com/toml-lang/toml[TOML format], Hantemcli strictly enforces the root to be a hash table/object. 
 Top-level lists/arrays and primitives are not allowed. 

@@ -30,4 +30,12 @@ pub struct Hantemcli {
 
     #[structopt(short, long, help = "Set the renderer to be strict.")]
     pub strict: bool,
+
+    #[structopt(
+        short,
+        long,
+        help = "Set the file extension to be searched.",
+        default_value = "hbs"
+    )]
+    pub extension: String,
 }

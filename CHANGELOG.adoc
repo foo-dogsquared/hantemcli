@@ -1,0 +1,29 @@
+= Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on https://keepachangelog.com/en/1.0.0/[Keep a Changelog],
+and this project adheres to https://semver.org/spec/v2.0.0.html[Semantic Versioning].
+
+
+
+== Unreleased 
+
+
+=== Added 
+
+* Add support for custom file extension with the `--extension`/`-e` command line option. 
+
+
+=== Changed 
+
+* Revise the template registration. 
+If the argument given in the templates is a file, it will be registered in the template registry with the file name. 
+For directories, any files detected are registered with the relative path to the given directory as the key. 
+
+
+
+
+== v0.1.0 
+
+* The initial version of the program. 

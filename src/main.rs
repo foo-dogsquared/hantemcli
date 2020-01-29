@@ -1,12 +1,14 @@
 use std::error::Error;
 use std::fs::File;
 use std::io::Write;
+use std::path::Path;
 use std::process;
 
 use config;
 use handlebars;
 use structopt::StructOpt;
 use toml;
+use walkdir;
 
 mod args;
 mod templates;
@@ -14,8 +16,6 @@ mod templates;
 use args::Hantemcli;
 
 static ERROR_EXIT_STATUS: i64 = 1;
-static FILE_EXTENSION: &str = "hbs";
-static FILE_EXTENSION_WITH_DOT: &str = ".hbs";
 
 fn main() {
     let args = Hantemcli::from_args();
@@ -45,41 +45,70 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
             ),
         }
     }
+
     let data: toml::Value = raw_config
         .try_into()
         .expect("The resulting TOML has an value error occurred... That shouldn't happened.");
 
+    // Sanitizing the path naively.
+    let extension = match args.extension.starts_with(".") {
+        true => args.extension,
+        false => format!(".{}", args.extension),
+    };
+
+    // A closure to easily register a path into the template registry.
+    // It will return a boolean indicating the success of the registration.
+    let mut register_file_to_template_registry = |template: &Path, base_dir: &Path| -> bool {
+        let normalized_base_dir = templates::naively_normalize_path(&base_dir);
+
+        let name = match templates::path_without_extension(&template) {
+            Some(v) => templates::naively_normalize_path(v),
+            None => {
+                eprintln!("{:?} have an error getting the file path.", template);
+                return false;
+            }
+        };
+
+        let relpath_from_base_dir = match templates::relative_path_from(&name, &normalized_base_dir)
+        {
+            Some(v) => v,
+            None => {
+                eprintln!("{:?} has an error getting the relative path of the template. How's that possible?", template);
+                return false;
+            }
+        };
+
+        match template_registry
+            .register_template_file(relpath_from_base_dir.to_str().unwrap(), &template)
+        {
+            Ok(_v) => (),
+            Err(e) => {
+                eprintln!("Template file {:?} has an error.", &template);
+                eprintln!("{}", e);
+                return false;
+            }
+        };
+
+        return true;
+    };
+
     for template in args.templates {
         if template.is_dir() {
-            match template_registry.register_templates_directory(FILE_EXTENSION_WITH_DOT, template)
-            {
-                Ok(_v) => continue,
-                Err(e) => eprintln!("{}", e),
+            let walker = walkdir::WalkDir::new(&template).min_depth(1).into_iter();
+            for entry in walker.filter_map(|e| e.ok()).filter(|e| {
+                e.path().is_file() && templates::has_file_extension(e.path(), &extension)
+            }) {
+                register_file_to_template_registry(&entry.path(), &template);
             }
         } else {
-            match template.extension() {
-                Some(v) => {
-                    let extension_str: &str = v.to_str().unwrap();
-                    if extension_str != FILE_EXTENSION {
-                        eprintln!("{:?} does not have the required extension.", template);
-                        continue;
-                    }
-                }
-                None => continue,
+            if !templates::has_file_extension(&template, &extension) {
+                continue;
             }
 
-            let name = match templates::path_without_extension(&template) {
-                Some(v) => v,
-                None => {
-                    eprintln!("{:?} have an error getting the file path.", template);
-                    continue;
-                }
-            };
-
-            match template_registry.register_template_file(&name.to_string_lossy(), template) {
-                Ok(_v) => (),
-                Err(e) => eprintln!("{}", e),
-            };
+            register_file_to_template_registry(
+                &template,
+                &template.parent().unwrap_or(Path::new("./")),
+            );
         }
     }
 
