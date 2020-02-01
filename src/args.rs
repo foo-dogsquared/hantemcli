@@ -5,7 +5,6 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 pub struct Hantemcli {
     #[structopt(
-        required = true,
         multiple = true,
         parse(from_os_str),
         help = "The path of the template file."
@@ -15,7 +14,6 @@ pub struct Hantemcli {
     #[structopt(
         last = true,
         multiple = true,
-        required = true,
         parse(from_os_str),
         value_name = "data",
         help = "The path of the data files. Accepts JSON, HJSON, INI, TOML, and YAML format."
@@ -38,4 +36,7 @@ pub struct Hantemcli {
         default_value = "hbs"
     )]
     pub extension: String,
+
+    #[structopt(long, help = "Set the program in REPL mode.")]
+    pub repl: bool,
 }

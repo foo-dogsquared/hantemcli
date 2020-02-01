@@ -1,4 +1,89 @@
+use std::error::Error;
 use std::path::{Component, Path, PathBuf};
+
+use handlebars;
+
+pub fn register_from_path(
+    template_registry: &mut handlebars::Handlebars,
+    paths: Vec<PathBuf>,
+    extension: &str,
+) -> Result<Vec<PathBuf>, Box<dyn Error>> {
+    // Sanitizing the path naively.
+    let extension = match extension.starts_with(".") {
+        true => extension.to_string(),
+        false => format!(".{}", extension),
+    };
+
+    let mut registered_files = vec![];
+
+    for template in paths {
+        if template.is_dir() {
+            let walker = walkdir::WalkDir::new(&template).min_depth(1).into_iter();
+            for entry in walker
+                .filter_map(|e| e.ok())
+                .filter(|e| e.path().is_file() && has_file_extension(e.path(), &extension))
+            {
+                if register_file_to_template_registry(template_registry, &entry.path(), &template) {
+                    registered_files.push(entry.path().to_path_buf());
+                }
+            }
+        } else {
+            if !has_file_extension(&template, &extension) {
+                continue;
+            }
+
+            if register_file_to_template_registry(
+                template_registry,
+                &template,
+                &template.parent().unwrap_or(Path::new("./")),
+            ) {
+                registered_files.push(template.to_path_buf());
+            }
+        }
+    }
+
+    Ok(registered_files)
+}
+
+// A closure to easily register a path into the template registry.
+// It will return a boolean indicating the success of the registration.
+pub fn register_file_to_template_registry(
+    template_registry: &mut handlebars::Handlebars,
+    template: &Path,
+    base_dir: &Path,
+) -> bool {
+    let normalized_base_dir = naively_normalize_path(&base_dir);
+
+    let name = match path_without_extension(&template) {
+        Some(v) => naively_normalize_path(v),
+        None => {
+            eprintln!("{:?} have an error getting the file path.", template);
+            return false;
+        }
+    };
+
+    let relpath_from_base_dir = match relative_path_from(&name, &normalized_base_dir) {
+        Some(v) => v,
+        None => {
+            eprintln!(
+                "{:?} has an error getting the relative path of the template. How's that possible?",
+                template
+            );
+            return false;
+        }
+    };
+
+    match template_registry
+        .register_template_file(relpath_from_base_dir.to_str().unwrap(), &template)
+    {
+        Ok(_v) => true,
+        Err(e) => {
+            eprintln!("Template file {:?} has an error.", &template);
+            eprintln!("{}", e);
+            false
+        }
+    }
+}
 
 pub fn path_without_extension<S>(path: S) -> Option<PathBuf>
 where
@@ -8,7 +93,7 @@ where
 
     let mut parent: PathBuf = match path.parent() {
         Some(v) => v.to_path_buf(),
-        None => return None,
+        None => PathBuf::new(),
     };
 
     match path.file_stem() {
