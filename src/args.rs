@@ -15,7 +15,6 @@ pub struct Hantemcli {
     #[structopt(
         last = true,
         multiple = true,
-        required = true,
         parse(from_os_str),
         value_name = "data",
         help = "The path of the data files. Accepts JSON, HJSON, INI, TOML, and YAML format."

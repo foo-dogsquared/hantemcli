@@ -73,6 +73,35 @@ Or simply redirect the `stdout` stream to the output file.
 hantemcli TEMPLATE_FILE -- DATA_FILES... > output.txt
 ----
 
+Aside from data files, you can also render a template with environment variables. 
+
+Given the simple Handlebars template stored in a file named `base.hbs`. 
+
+[source, handlebars]
+----
+The logger level is set at {{ logger_lvl }}.
+
+{{~# if debug ~}}
+Debug mode is on.
+{{~/ if ~}}
+----
+
+And execute the shell with the following command. 
+
+[source, shell]
+----
+LOGGER_LVL="debug" DEBUG=1 hantemcli base.hbs
+----
+
+Will result in the following string. 
+
+[source]
+----
+The logger level is set at debug.
+
+Debug mode is on.
+----
+
 For detailed information about the program, you can read the link:docs/manual.adoc[manual]. 
 
 

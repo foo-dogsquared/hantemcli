@@ -45,6 +45,7 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
             ),
         }
     }
+    raw_config.merge(config::Environment::new())?;
 
     let data: toml::Value = raw_config
         .try_into()

@@ -29,15 +29,15 @@ Gabriel Arazas
 
 == Global options 
 
+*-e, --extension*=[_FILE EXTENSION_]:: 
+The file extension of the template files to be searched. 
+By default, it has `hbs` as the value. 
+
 *-o, --output*=[_PATH_]:: 
 The output file to be written. 
 
 *-r, --root*=[_TEMPLATE NAME_]:: 
 The template name in the registry to be rendered. 
-
-*-e, --extension*=[_FILE EXTENSION_]:: 
-The file extension of the template files to be searched. 
-By default, it has `hbs` as the value. 
 
 *-s, --strict*:: 
 Set the renderer in strict mode where it will give an error for a missing value. 
@@ -150,7 +150,11 @@ The data from those files are then merged starting with the first given data fil
 In the above example, we render the template named 'base' in the registry with all of the data files. 
 It will start to merge with the first data file (`tests/default.toml`) then the second (`tests/dev.toml`), third (`tests/prod.toml`), and so on. 
 
-The renderer can also be set in strict mode. 
+Other than data files, you can also render a template with environment variables similar to https://github.com/subfuzion/envtpl/[envtpl]. 
+The environment variables are converted to lowercase in the resulting data. 
+Environment variables are also higher in precedence, overriding the values from the data files. 
+
+The renderer can also be set in strict mode with the `--strict`/`-s` flag. 
 In this mode, it will give an error for a missing value. 
 This is useful for ensuring the template is fully rendered as intended. 
 Although, missing partials are not included in the error-checking process. 
