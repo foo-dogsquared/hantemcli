@@ -32,9 +32,9 @@ fn main() {
 pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
     let mut template_registry = handlebars::Handlebars::new();
     template_registry.set_strict_mode(args.strict);
+    templates::register_from_path(&mut template_registry, args.templates, &args.extension)?;
 
     let mut raw_config: config::Config = config::Config::new();
-
     // Getting the data from the files.
     for data_path in args.data_paths.iter() {
         match raw_config
@@ -47,7 +47,6 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
             ),
         }
     }
-    raw_config.merge(config::Environment::new())?;
 
     // Merging the data from environment variables.
     raw_config.merge(config::Environment::new())?;
