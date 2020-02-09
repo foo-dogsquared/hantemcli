@@ -47,6 +47,7 @@ pub fn parse_args(args: Hantemcli) -> Result<(), Box<dyn Error>> {
             ),
         }
     }
+    raw_config.merge(config::Environment::new())?;
 
     // Merging the data from environment variables.
     raw_config.merge(config::Environment::new())?;
