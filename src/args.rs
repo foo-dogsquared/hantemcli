@@ -5,7 +5,6 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 pub struct Hantemcli {
     #[structopt(
-        required = true,
         multiple = true,
         parse(from_os_str),
         help = "The path of the template file."
@@ -37,4 +36,7 @@ pub struct Hantemcli {
         default_value = "hbs"
     )]
     pub extension: String,
+
+    #[structopt(long, help = "Set the program in REPL mode.")]
+    pub repl: bool,
 }
