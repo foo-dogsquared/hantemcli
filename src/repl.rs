@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use std::convert::{TryFrom, TryInto};
+use std::env;
 use std::error::Error;
 use std::fmt::Debug;
 use std::io::{self, Write};
@@ -14,10 +14,13 @@ use crate::templates;
 static HELP_STRING: &str = "The Hantemcli has a few subcommands to evaluate. 
 
 * add [data | template] FILES... - add the data/template in the respective cache
+* cd PATH - change the current working directory of the process
+* exit - exit the REPL
+* help - view the help section
+* render KEY - render the template with the data
 * reset [data | template] - clear the data/template cache
 * view [data | template] KEY - view the containing template string/data of the key
-* help - view the help section
-* exit - exit the REPL
+* pwd - print the current working directory of the process
 ";
 
 #[derive(Debug)]
@@ -44,6 +47,8 @@ pub enum ReplCommand {
     Reset(Type),
     View(Type, String),
     Render(String),
+    ChangeDirectory(String),
+    Pwd, // Present working directory
     Help,
     Exit,
 }
@@ -98,6 +103,12 @@ impl TryFrom<&str> for ReplCommand {
 
                 Ok(Self::Render(key))
             }
+            "cd" => {
+                let path = args.next().and_then(|v| Some(v.to_string())).ok_or("No path given.".to_string())?;
+
+                Ok(Self::ChangeDirectory(path))
+            }
+            "pwd" => Ok(Self::Pwd),
             "help" | "?" => Ok(Self::Help),
             "exit" => Ok(Self::Exit),
             _ => Err(format!("No such keyword as {:?}", string)),
@@ -147,7 +158,7 @@ impl Repl {
                     ReplCommand::Exit => return Ok(()),
                     _ => v,
                 },
-                Err(e) => continue,
+                Err(_e) => continue,
             };
 
             match self.eval(command) {
@@ -235,6 +246,18 @@ impl Repl {
                     }
                 }
             },
+            ReplCommand::ChangeDirectory(path) => {
+                match env::set_current_dir(&path) {
+                    Ok(_v) => println!("Changed to {:?} successfully", path),
+                    Err(e) => eprintln!("{}", e),
+                }
+            },
+            ReplCommand::Pwd => {
+                match env::current_dir() {
+                    Ok(v) => println!("{:?}", v),
+                    Err(e) => eprintln!("{}", e),
+                }
+            }
             ReplCommand::Render(key) => {
                 let rendered_string = self
                     .template_registry
